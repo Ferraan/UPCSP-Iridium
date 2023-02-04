@@ -3,7 +3,7 @@
 
 
 static const int RXPin = 4, TXPin = 3;
-static const uint32_t GPSBaud = 9600;
+static const uint32_t GPSBaud = 456456;
 
 // The TinyGPSPlus object
 TinyGPSPlus gps;
