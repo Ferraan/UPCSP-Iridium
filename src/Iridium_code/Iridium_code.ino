@@ -11,28 +11,21 @@ TinyGPSPlus gps;
 // The serial connection to the GPS device
 SoftwareSerial ss(RXPin, TXPin);
 
+String gpsStr;
+
 void setup()
 {
   Serial.begin(115200);
   ss.begin(GPSBaud);
   pinMode(6,OUTPUT);
-  Serial.println(F("Beggining"));
+  Serial.println(F("Beginning"));
   
 }
 
 void loop()
 {
-  printInt(gps.satellites.value(), gps.satellites.isValid(), 5);
-  printFloat(gps.location.lat(), gps.location.isValid(), 11, 6);
-  printFloat(gps.location.lng(), gps.location.isValid(), 12, 6);
-  printInt(gps.location.age(), gps.location.isValid(), 5);
-  printDateTime(gps.date, gps.time);
-  printFloat(gps.altitude.meters(), gps.altitude.isValid(), 7, 2);
-  printFloat(gps.speed.kmph(), gps.speed.isValid(), 6, 2);
-  printInt(gps.charsProcessed(), true, 6);
-  printInt(gps.sentencesWithFix(), true, 10);
-  printInt(gps.failedChecksum(), true, 9);
-  Serial.println();
+  gpsStr=getGpsStr(gps.time, gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.location.isValid());
+  Serial.println(gpsStr);
   if(gps.location.isValid()){
     digitalWrite(6,HIGH);
   }
@@ -57,72 +50,30 @@ static void smartDelay(unsigned long ms)
   } while (millis() - start < ms);
 }
 
-static void printFloat(float val, bool valid, int len, int prec)
-{
-  if (!valid)
-  {
-    while (len-- > 1)
-      Serial.print('*');
-    Serial.print(' ');
-  }
-  else
-  {
-    Serial.print(val, prec);
-    int vi = abs((int)val);
-    int flen = prec + (val < 0.0 ? 2 : 1); // . and -
-    flen += vi >= 1000 ? 4 : vi >= 100 ? 3 : vi >= 10 ? 2 : 1;
-    for (int i=flen; i<len; ++i)
-      Serial.print(' ');
-  }
-  smartDelay(0);
-}
-
-static void printInt(unsigned long val, bool valid, int len)
-{
-  char sz[32] = "*****************";
-  if (valid)
-    sprintf(sz, "%ld", val);
-  sz[len] = 0;
-  for (int i=strlen(sz); i<len; ++i)
-    sz[i] = ' ';
-  if (len > 0) 
-    sz[len-1] = ' ';
-  Serial.print(sz);
-  smartDelay(0);
-}
-
-static void printDateTime(TinyGPSDate &d, TinyGPSTime &t)
-{
-  if (!d.isValid())
-  {
-    Serial.print(F("********** "));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d/%02d/%02d ", d.month(), d.day(), d.year());
-    Serial.print(sz);
-  }
-  
-  if (!t.isValid())
-  {
-    Serial.print(F("******** "));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d:%02d:%02d ", t.hour(), t.minute(), t.second());
-    Serial.print(sz);
-  }
-
-  printInt(d.age(), d.isValid(), 5);
-  smartDelay(0);
-}
-
-static void printStr(const char *str, int len)
-{
-  int slen = strlen(str);
-  for (int i=0; i<len; ++i)
-    Serial.print(i<slen ? str[i] : ' ');
-  smartDelay(0);
+String getGpsStr(TinyGPSTime &t, float lat, float lng, float alt, bool valid){
+  String message;
+  if(!valid){
+    String errmsg="No location";
+    message.concat(errmsg);
+  }  
+  else{
+  String latStr=String(lat,5);
+  String lngStr=String(lng,5);
+  String altStr=String(alt,5);
+  String hour=String(t.hour());
+  String minute=String(t.minute());
+  String second=String(t.second());
+  message.concat(hour);
+  message.concat(":");
+  message.concat(minute);
+  message.concat(":");
+  message.concat(second);
+  message.concat(",");
+  message.concat(latStr);
+  message.concat(",");
+  message.concat(lngStr);
+  message.concat(",");
+  message.concat(altStr);
+  }  
+  return(message);
 }
